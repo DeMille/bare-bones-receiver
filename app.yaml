@@ -1,0 +1,11 @@
+application: REPLACE this with your app name <<<<<<<<<<<<<<<<<<<<
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /_ah/mail/.+
+  script: main.py
+
+inbound_services:
+- mail

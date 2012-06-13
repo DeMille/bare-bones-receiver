@@ -15,13 +15,13 @@ There shouldn't be much setup to this, just change a thing or two and upload:
 
 The POST output is like the one described in the GAE mail docs [here](https://developers.google.com/appengine/docs/python/mail/receivingmail).
 
-**sender**         : The message sender 
-**to**             : Sent to 
-**cc**             : Cc 
-**date**           : Date 
-**subject**        : Subject 
-**html_body**      : HTML version of the body 
-**plaintext_body** : Plain text version of the body 
+**sender**         : The message sender  
+**to**             : Sent to  
+**cc**             : Cc  
+**date**           : Date  
+**subject**        : Subject  
+**html_body**      : HTML version of the body  
+**plaintext_body** : Plain text version of the body  
 **original**       : The original message, complete with email headers and attachments, ect
 
 If you want to get the attachments just use your preferred method to parse them out of the **original** POST field once you receive the POST at your url. (Unless you can find a better way to send multipart POST from the attachments received in the app... I couldn't seem to find a good way to do it.)

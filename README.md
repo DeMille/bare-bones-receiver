@@ -11,8 +11,8 @@ There shouldn't be much setup to this, just change a thing or two and upload:
 - Change 'url' in main.py to your POST url
 - Deploy!
 
-Email works like this: __________@<yourapp>.appspotmail.com
-Dont forget the appspotMAIL part!  Otherwise it won't go through  
+Email works like this: __________@<yourapp>.appspotmail.com  
+Dont forget the appspotMAIL part!  Otherwise it won't go through.  
 
 ## POST format
 

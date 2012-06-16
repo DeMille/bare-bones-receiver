@@ -24,4 +24,6 @@ The POST output is like the one described in the GAE mail docs [here](https://de
 **plaintext_body** : Plain text version of the body  
 **original**       : The original message, complete with email headers and attachments, ect
 
-If you want to get the attachments just use your preferred method to parse them out of the **original** POST field once you receive the POST at your url. (Unless you can find a better way to send multipart POST from the attachments received in the app... I couldn't seem to find a good way to do it.)
+If you want to get the attachments just use your preferred method to parse them out of the **original** POST field once you receive the POST at your url. (Unless you can find a better way to send multipart POST from the attachments received in the app... I couldn't seem to find a good way to do it.)  
+
+Note, GAE has some limits on incoming and outgoing request size (5mb request and 32mb response).  You can see the limits [here](https://developers.google.com/appengine/docs/python/urlfetch/overview)

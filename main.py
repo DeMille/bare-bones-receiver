@@ -40,21 +40,21 @@ class HandleEmail(InboundMailHandler):
         url = 'http://where ever you want <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'
 		
         form_fields = {
-          'sender': sender,
-          'to': to,
-          'cc': cc,
-          'date': date,
-          'subject': subject,
-          'html_body': html_body,
-          'plaintext_body': plaintext_body,
-          'original': original
+          'sender': sender.encode('utf8'),
+          'to': to.encode('utf8'),
+          'cc': cc.encode('utf8'),
+          'date': date.encode('utf8'),
+          'subject': subject.encode('utf8'),
+          'html_body': html_body.encode('utf8'),
+          'plaintext_body': plaintext_body.encode('utf8'),
+          'original': original.encode('utf8')
         }
 
         form_fields = urllib.urlencode(form_fields)
         result = urlfetch.fetch(url = url,
                                 payload = form_fields,
                                 method = urlfetch.POST,
-                                headers = {'Content-Type': 'application/x-www-form-urlencoded'})
+                                headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'})
         logging.info('POST to ' + url + ' returned: ' + str(result.status_code))
         logging.info('Returned content: ' + result.content)
 

@@ -1,6 +1,6 @@
 application: REPLACE this with your app name <<<<<<<<<<<<<<<<<<<<
 version: 1
-runtime: python
+runtime: python27
 api_version: 1
 
 handlers:

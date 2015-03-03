@@ -1,13 +1,12 @@
-application: REPLACE this with your app name <<<<<<<<<<<<<<<<<<<<
+application: bare-bones-receiver
 version: 1
 runtime: python27
-module: default
 api_version: 1
-threadsafe: false
+threadsafe: true
 
 handlers:
-- url: /_ah/mail/.+
-  script: main.py
+  - url: /_ah/mail/.+
+    script: main.application
 
 inbound_services:
-- mail
+  - mail

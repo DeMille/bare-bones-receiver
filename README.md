@@ -1,32 +1,42 @@
 # Bare Bones Receiver
 
-This is a simple Google App Engine app that will receive emails and POST them to a url. 
-It's a cheap and easy way to let your app receive emails.
+This is a simple Google App Engine app that will receive emails and POST them to a url.
+It's a cheap and easy way to let your app receive emails without having to deal with email server madness.
 
-## How to use it
+## How to use
 
-There shouldn't be much setup to this, just change a thing or two and upload: 
+There shouldn't be much setup to this, just change a thing or two and upload:
 - Fire up a new GAE app
-- Change the 'application' in app.yaml to your app name
-- Change 'url' in main.py to your POST url
+- Change the `application` in app.yaml to your app id
+- Change the `url` in main.py to your POST endpoint
 - Deploy!
 
-Email works like this: __________@<yourapp>.appspotmail.com  
-Dont forget the appspotMAIL part!  Otherwise it won't go through.  
+Any emails following this format are received and forwarded to your specified endpoint: __________@\<your-app-id\>.appspotmail.com
 
-## POST format
+Dont forget the appspot _MAIL_ part!  Otherwise it won't go through.
 
-The POST output is like the one described in the GAE mail docs [here](https://developers.google.com/appengine/docs/python/mail/receivingmail).
+## POST parameters
 
-**sender**         : The message sender  
-**to**             : Sent to  
-**cc**             : Cc  
-**date**           : Date  
-**subject**        : Subject  
-**html_body**      : HTML version of the body  
-**plaintext_body** : Plain text version of the body  
-**original**       : The original message, complete with email headers and attachments, ect
+- `sender`: sender's email address, e.g. `Nobody <nobody@example.com>`
+- `to`: comma separated list, e.g. `Joe <joe@example.com>, Bill <bill@example.com>`
+- `cc`: comma separated list like, may or may not exist
+- `date`
+- `subject`
+- `html_body`: may or may not exist
+- `plain_body`
+- `attachments`: a JSON list of any attachments, following this form:
 
-If you want to get the attachments just use your preferred method to parse them out of the **original** POST field once you receive the POST at your url. (Unless you can find a better way to send multipart POST from the attachments received in the app... I couldn't seem to find a good way to do it.)  
+```JSON
+{
+    "filename": "filename.ext",
+    "encoding": "base64",
+    "payload": "iVBORw0KGgoAAAANSUhEUgAAAyAAAAJYCAIAA..."
+}
+```
 
-Note, GAE has some limits on incoming and outgoing request size (5mb request and 32mb response).  You can see the limits [here](https://developers.google.com/appengine/docs/python/urlfetch/overview)
+
+## Notes
+
+- You can define the email address(es) that will receive email in you `app.yaml`. The given configuration will match _any_ email addresses at your appspotmail subdomain.  See the [docs](https://cloud.google.com/appengine/docs/python/mail/receivingmail) if you want to define different / multiple handlers.
+
+- Google app engine has [limits](https://cloud.google.com/appengine/docs/python/urlfetch/#Python_Quotas_and_limits) on request sizes (10mb request and 32mb response). If you are using this with attachments you might want to make sure you understand all of the quotas and limits on the platform.

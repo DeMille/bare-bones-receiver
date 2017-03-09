@@ -1,24 +1,25 @@
 import webapp2
 import logging
-import urllib
 import json
+import hmac
+import hashlib
+from email.utils import getaddresses, parseaddr
 
-from google.appengine.ext.webapp.mail_handlers import InboundMailHandler
-from google.appengine.api import urlfetch
+from google.appengine.api import mail, urlfetch
 
 
-class HandleEmail(InboundMailHandler):
-    def receive(self, message):
+class HandleEmail(webapp2.RequestHandler):
+    def post(self):
+        # create email message and parse out fields
+        message = mail.InboundEmailMessage(self.request.body)
 
-        # parse out fields
-        to = message.to
-        sender = message.sender
-        cc = getattr(message, 'cc', '')
+        # list of emails: ['blah@example.com', ...]
+        to = [addr[1] for addr in getaddresses([message.to])]
+        cc = [addr[1] for addr in getaddresses([getattr(message, 'cc', '')])]
+
+        sender = parseaddr(message.sender)[1]
+        subject = getattr(message, 'subject', '')
         date = message.date
-        subject = message.subject
-
-        # Original message, as a python email.message.Message
-        # original = str(message.original)
 
         html_body = ''
         for _, body in message.bodies('text/html'):
@@ -28,52 +29,74 @@ class HandleEmail(InboundMailHandler):
         for _, plain in message.bodies('text/plain'):
             plain_body = plain.decode()
 
-        # Attachements are EncodedPayload objects, see
-        # https://code.google.com/p/googleappengine/source/browse/trunk/
-        # python/google/appengine/api/mail.py#536
-        attachments = [{
-                        'filename': attachment[0],
-                        'encoding': attachment[1].encoding,
-                        'payload': attachment[1].payload
-                       }
-                       for attachment
-                       in getattr(message, 'attachments', [])]
+        # Attachements are a list of tuples: (filename, EncodedPayload)
+        # EncodedPayloads are likely to be base64
+        #
+        # EncodedPayload:
+        # https://cloud.google.com/appengine/docs/python/refdocs/google.appengine.api.mail#google.appengine.api.mail.EncodedPayload
+        #
+        attachments = []
+
+        for attachment in getattr(message, 'attachments', []):
+            encoding = attachment[1].encoding
+            payload = attachment[1].payload
+
+            if (not encoding or encoding.lower() != 'base64'):
+                payload = attachment[1].decode().encode('base64')
+
+            attachments.append({
+                'filename': attachment[0],
+                'payload': payload
+            })
 
         # logging, remove what you find to be excessive
-        logging.info('sender: %s', sender)
-        logging.info('to: %s', to)
-        logging.info('cc: %s', cc)
-        logging.info('date: %s', date)
-        logging.info('subject: %s', subject)
-        logging.info('html_body: %s', html_body)
-        logging.info('plain_body: %s', plain_body)
-        logging.info('attachments: %s', [a['filename'] for a in attachments])
+        logging.info('From <%s> to [<%s>]', sender,  '>, <'.join(to))
+        logging.info('Subject: %s', subject)
+        logging.info('Body: %s', plain_body)
+        logging.info('Attachments: %s', [a['filename'] for a in attachments])
 
-        # POST (change to your endpoint, httpbin is cool for testing though)
+        # change to your endpoint (httpbin is cool for testing though)
         url = 'http://httpbin.org/post'
 
-        form_fields = urllib.urlencode({
-          'sender': sender.encode('utf8'),
-          'to': to.encode('utf8'),
-          'cc': cc.encode('utf8'),
-          'date': date.encode('utf8'),
-          'subject': subject.encode('utf8'),
-          'html_body': html_body.encode('utf8'),
-          'plain_body': plain_body.encode('utf8'),
-          'attachments': json.dumps(attachments)
+        payload = json.dumps({
+          'sender': sender,
+          'to': to,
+          'cc': cc,
+          'date': date,
+          'subject': subject,
+          'html_body': html_body,
+          'plain_body': plain_body,
+          'attachments': attachments
         })
 
+        # add a key if you want to sign each request, or remove these lines
+        key = 'XXXXXXXXXXXXXXXXXXXX'
+
+        # hmac needs bytes (str() == bytes() in python 2.7)
+        signature = hmac.new(
+            bytes(key),
+            bytes(payload),
+            hashlib.sha1).hexdigest()
+
         headers = {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
+            'Content-Type': 'application/json',
+            'X-Email-Signature': signature,
         }
 
-        result = urlfetch.fetch(url=url,
-                                method=urlfetch.POST,
-                                payload=form_fields,
-                                headers=headers)
+        # try to post to destination
+        try:
+            result = urlfetch.fetch(
+                url=url,
+                headers=headers,
+                payload=payload,
+                method=urlfetch.POST)
 
-        # log more
-        logging.info('POST to %s returned: %s', url, result.status_code)
-        logging.info('Returned content: %s', result.content)
+            logging.info('POST to %s returned: %s', url, result.status_code)
+            logging.info('Response body: %s', result.content)
+        except urlfetch.Error as err:
+            logging.exception('urlfetch error posting to %s: %s', url, err)
 
-application = webapp2.WSGIApplication([HandleEmail.mapping()], debug=True)
+
+application = webapp2.WSGIApplication([
+    ('/_ah/mail/.+', HandleEmail),
+])
